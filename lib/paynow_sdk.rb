@@ -100,7 +100,7 @@ class Payment
   end
 end
 
-class PaynowSdk
+class Paynow
   attr_accessor :integration_id, :integration_key, :return_url, :result_url
 
   url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction"
