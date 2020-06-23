@@ -72,7 +72,7 @@ end
 #Create a transaction
 
 class Payment
-  attr_accessor :items, :auth_email
+  attr_accessor :items, :auth_email, :reference
 
   def initialize(reference, auth_email)
     @reference = reference
@@ -80,22 +80,23 @@ class Payment
   end
 
   def add(title, amount)
-    self.items.push([title, amount])
+    @items = []
+    @items.push([title, amount])
   end
 
-  def self.total
-    total = 0.0
-    items.each do |item|
-      total += item[1]
-      return total
+  def total
+    @total = 0.0
+    @items.map do |item|
+      @total += item[1]
+      @total
     end
   end
 
-  def self.info
-    ticket = ""
-    items.each do |item|
-      ticket += item[0] + ", "
-      return ticket
+  def info
+    @ticket = ""
+    @items.each do |item|
+      @ticket += item[0] + ", "
+      @ticket
     end
   end
 end
@@ -103,8 +104,7 @@ end
 class Paynow
   attr_accessor :integration_id, :integration_key, :return_url, :result_url
 
-  url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction"
-  url_initiate_mobile_transaction = "https://www.paynow.co.zw/interface/remotetransaction"
+  @url_initiate_mobile_transaction = "https://www.paynow.co.zw/interface/remotetransaction"
 
   def initialize(integration_id, integration_key, return_url, result_url)
     @integration_id = integration_id
@@ -122,7 +122,7 @@ class Paynow
   end
 
   def send(payment)
-    return paying(payment)
+    paying(payment)
   end
 
   def send_mobile(payment, phone, method)
@@ -133,13 +133,13 @@ class Paynow
     return StatusResponse(data)
   end
 
-  def self.paying(payment)
-    if payment.total <= 0
-      raise "Transaction total cannot be less than 1"
-    end
+  def paying(payment)
+    # if payment.total <= 0
+    #   raise "Transaction total cannot be less than 1"
+    # end
 
     data = build(payment)
-
+    url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction"
     response = HTTParty.post(url_initiate_transaction, data)
     response_object = rebuild_response(response.parsed_response)
 
@@ -153,14 +153,14 @@ class Paynow
   end
 
   def paying_mobile(payment, phone, method)
-    if payment.total <= 0
-      raise "Transaction total cannot be less than 1"
-    end
+    # if payment.total <= 0
+    #   raise "Transaction total cannot be less than 1"
+    # end
 
-    if !payment.auth_email || payment.auth_email.length <= 0
-      raise "Auth email is required for mobile transactions. You can pass the auth email as the "
-      "second parameter in the create_payment method call"
-    end
+    # if !payment.auth_email || payment.auth_email.length <= 0
+    #   raise "Auth email is required for mobile transactions. You can pass the auth email as the "
+    #   "second parameter in the create_payment method call"
+    # end
 
     data = build(payment, phone, method)
 
@@ -191,7 +191,7 @@ class Paynow
       "amount": payment.total,
       "id": integration_id,
       "additionalinfo": payment.info,
-      "authemail": payment.auth_email || "",
+      "authemail": payment.auth_email,
       "status": "Message",
     }
 
@@ -231,7 +231,7 @@ class Paynow
     return body
   end
 
-  def self.ahash(items, integration_key)
+  def ahash(items, integration_key)
     out = ""
     items.each do |key, value|
       if key.to_s.downcase == "hash"
@@ -255,9 +255,9 @@ class Paynow
     return old_hash == new_hash
   end
 
-  def self.rebuild_response(response)
+  def rebuild_response(response)
     res = {}
-    response.each do |key, value|
+    response.map do |key, value|
       res[key] = value[0].to_s
     end
 
