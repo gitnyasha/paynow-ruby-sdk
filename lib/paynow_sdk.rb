@@ -101,13 +101,10 @@ class Payment
 end
 
 class PaynowSdk
-  attr_accessor :integration_id, :integration_key
+  attr_accessor :integration_id, :integration_key, :return_url, :result_url
 
   url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction"
   url_initiate_mobile_transaction = "https://www.paynow.co.zw/interface/remotetransaction"
-
-  return_url = ""
-  result_url = ""
 
   def initialize(integration_id, integration_key, return_url, result_url)
     @integration_id = integration_id
