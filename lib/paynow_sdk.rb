@@ -117,8 +117,8 @@ class Paynow
     self.result_url = url
   end
 
-  def self.create_payment(reference, auth_email)
-    return Payment.new(reference, auth_email)
+  def create_payment(reference, auth_email)
+    Payment.new(reference, auth_email)
   end
 
   def send(payment)
