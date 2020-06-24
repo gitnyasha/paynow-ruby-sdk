@@ -14,13 +14,13 @@ end
 # status of the transaction
 
 class StatusResponse
-  attr_accessor :paid, :status, :amount, :reference, :paynow_reference, :hash
+  attr_accessor :paid, :status, :amount, :reference, :paynow_reference, :hash.to_s
 
   def initialize(data, update)
     @data = data
     @update = update
     if update
-      selft.status_update(data)
+      self.status_update(data)
     else
       @status = data["status"].downcase
       @paid = self.status == "paid"
@@ -106,8 +106,6 @@ end
 class Paynow
   attr_accessor :integration_id, :integration_key, :return_url, :result_url
 
-  @url_initiate_mobile_transaction = "https://www.paynow.co.zw/interface/remotetransaction"
-
   def initialize(integration_id, integration_key, return_url, result_url)
     @integration_id = integration_id
     @integration_key = integration_key
@@ -139,9 +137,9 @@ class Paynow
     # if payment.total <= 0
     #   raise "Transaction total cannot be less than 1"
     # end
+    url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction"
 
     data = build(payment)
-    url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction"
     @response = HTTParty.post(url_initiate_transaction, data)
     @response_object = rebuild_response(@response.parsed_response).to_s
 
@@ -154,44 +152,45 @@ class Paynow
     InitalResponse.new(@response_object)
   end
 
-  # def paying_mobile(payment, phone, method)
-  #   # if payment.total <= 0
-  #   #   raise "Transaction total cannot be less than 1"
-  #   # end
+  def paying_mobile(payment, phone, method)
+    # if payment.total <= 0
+    #   raise "Transaction total cannot be less than 1"
+    # end
 
-  #   # if !payment.auth_email || payment.auth_email.length <= 0
-  #   #   raise "Auth email is required for mobile transactions. You can pass the auth email as the "
-  #   #   "second parameter in the create_payment method call"
-  #   # end
+    # if !payment.auth_email || payment.auth_email.length <= 0
+    #   raise "Auth email is required for mobile transactions. You can pass the auth email as the "
+    #   "second parameter in the create_payment method call"
+    # end
+    url_initiate_mobile_transaction = "https://www.paynow.co.zw/interface/remotetransaction"
 
-  #   data = build(payment, phone, method)
+    data = build(payment, phone, method)
 
-  #   @response = HTTParty.post(url_initiate_mobile_transaction, data).to_json
-  #   @response_object = rebuild_response(response.parsed_response)
+    @response = HTTParty.post(url_initiate_mobile_transaction, data).to_json
+    @response_object = rebuild_response(response.parsed_response)
 
-  #   if response_object["status"].to_s == "error"
-  #     return InitalResponse.new(response_object)
-  #   end
-  #   if !verify_hash(response_object, integration_key)
-  #     raise HashMismatchException("Hashes do not match")
-  #   end
-  #   return InitalResponse.new(response_object)
-  # end
+    if response_object["status"].to_s == "error"
+      InitalResponse.new(response_object)
+    end
+    if !verify_hash(response_object, integration_key)
+      raise HashMismatchException("Hashes do not match")
+    end
+    InitalResponse.new(response_object)
+  end
 
   def check_transaction_status(poll_url)
     @response = HTTParty.post(poll_url, data)
     @response_object = rebuild_response(response.parsed_response)
 
-    return StatusResponse.new(response_object)
+    StatusResponse.new(response_object)
   end
 
   def build(payment)
     body = {
+      "id": @integration_id,
       "resulturl": result_url,
       "returnurl": return_url,
       "reference": payment.reference,
       "amount": payment.total,
-      "id": integration_id,
       "additionalinfo": payment.info,
       "authemail": payment.auth_email,
       "status": "Message",
@@ -249,9 +248,9 @@ class Paynow
     end
 
     old_hash = response["hash"]
-    new_hash = self.ahash(response, integration_key)
+    new_hash = ahash(response, integration_key)
 
-    return old_hash == new_hash
+    old_hash == new_hash
   end
 
   #building the response into a key/value pair hash
