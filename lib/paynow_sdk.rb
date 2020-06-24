@@ -164,7 +164,7 @@ class Paynow
 
     data = build(payment, phone, method)
 
-    response = HTTParty.post(url_initiate_mobile_transaction, data)
+    response = HTTParty.post(url_initiate_mobile_transaction, data).to_json
     response_object = rebuild_response(response.parsed_response)
 
     if response_object["status"].to_s == "error"
@@ -260,7 +260,7 @@ class Paynow
     res = {}
     response.each do |key, array|
       array.each do |value|
-        res[key] = value[0].to_s
+        res[key] = value[0]
       end
     end
     res
