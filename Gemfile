@@ -6,3 +6,4 @@ gemspec
 gem "rake", "~> 12.0"
 gem "minitest", "~> 5.0"
 gem "minitest-reporters", "~> 1.4", ">= 1.4.2"
+gem "httparty"
