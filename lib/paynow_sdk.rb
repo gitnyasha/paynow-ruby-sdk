@@ -1,5 +1,7 @@
 require "paynow_sdk/version"
 require "httparty"
+require "cgi"
+require "digest"
 
 #throws error when hash from Paynow does not match locally generated hash
 
@@ -18,22 +20,22 @@ class StatusResponse
     @data = data
     @update = update
     if update
-      self.status_update(data)
+      selft.status_update(data)
     else
-      self.status = data["status"].downcase
-      self.paid = self.status == "paid"
+      @status = data["status"].downcase
+      @paid = self.status == "paid"
 
       if data.include?("amount")
-        self.amount = data["amount"].to_f
+        @amount = data["amount"].to_f
       end
       if data.include?("reference")
-        self.reference = data["reference"].to_s
+        @reference = data["reference"].to_s
       end
       if data.include?("paynow_reference")
-        self.paynow_reference = data["paynow_reference"].to_s
+        @paynow_reference = data["paynow_reference"].to_s
       end
       if data.include?("hash")
-        self.hash = data["hash"]
+        @hash = data["hash"]
       end
     end
   end
@@ -114,7 +116,7 @@ class Paynow
   end
 
   def self.result_url(url)
-    self.result_url = url
+    result_url = url
   end
 
   def create_payment(reference, auth_email)
@@ -140,47 +142,47 @@ class Paynow
 
     data = build(payment)
     url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction"
-    response = HTTParty.post(url_initiate_transaction, data)
-    response_object = rebuild_response(response.parsed_response)
+    @response = HTTParty.post(url_initiate_transaction, data)
+    @response_object = rebuild_response(@response.parsed_response).to_s
 
-    if response_object.status.to_s == "error"
-      InitalResponse.new(response_object)
+    if @response_object.status.to_s == "error"
+      InitalResponse.new(@response_object)
     end
-    if !verify_hash(response_object, integration_key)
+    if !verify_hash(@response_object, integration_key)
       HashMismatchException("Hashes do not match")
     end
-    InitalResponse.new(response_object)
+    InitalResponse.new(@response_object)
   end
 
-  def paying_mobile(payment, phone, method)
-    # if payment.total <= 0
-    #   raise "Transaction total cannot be less than 1"
-    # end
+  # def paying_mobile(payment, phone, method)
+  #   # if payment.total <= 0
+  #   #   raise "Transaction total cannot be less than 1"
+  #   # end
 
-    # if !payment.auth_email || payment.auth_email.length <= 0
-    #   raise "Auth email is required for mobile transactions. You can pass the auth email as the "
-    #   "second parameter in the create_payment method call"
-    # end
+  #   # if !payment.auth_email || payment.auth_email.length <= 0
+  #   #   raise "Auth email is required for mobile transactions. You can pass the auth email as the "
+  #   #   "second parameter in the create_payment method call"
+  #   # end
 
-    data = build(payment, phone, method)
+  #   data = build(payment, phone, method)
 
-    response = HTTParty.post(url_initiate_mobile_transaction, data).to_json
-    response_object = rebuild_response(response.parsed_response)
+  #   @response = HTTParty.post(url_initiate_mobile_transaction, data).to_json
+  #   @response_object = rebuild_response(response.parsed_response)
 
-    if response_object["status"].to_s == "error"
-      return InitalResponse.new(response_object)
-    end
-    if !verify_hash(response_object, integration_key)
-      raise HashMismatchException("Hashes do not match")
-    end
-    return InitalResponse.new(response_object)
-  end
+  #   if response_object["status"].to_s == "error"
+  #     return InitalResponse.new(response_object)
+  #   end
+  #   if !verify_hash(response_object, integration_key)
+  #     raise HashMismatchException("Hashes do not match")
+  #   end
+  #   return InitalResponse.new(response_object)
+  # end
 
-  def self.check_transaction_status(poll_url)
-    response = HTTParty.post(poll_url, data)
-    response_object = rebuild_response(response.parsed_response)
+  def check_transaction_status(poll_url)
+    @response = HTTParty.post(poll_url, data)
+    @response_object = rebuild_response(response.parsed_response)
 
-    return StatusResponse.new(response_object)
+    StatusResponse.new(response_object)
   end
 
   def build(payment)
@@ -189,28 +191,30 @@ class Paynow
       "returnurl": return_url,
       "reference": payment.reference,
       "amount": payment.total,
-      "id": integration_id,
+      "id": @integration_id,
       "additionalinfo": payment.info,
       "authemail": payment.auth_email,
       "status": "Message",
     }
 
+    #1 join all values into one long string
     body.each do |key, value|
       body[key] = %q[value].to_s
     end
 
+    # 2 Add integration key to the string
     body["hash"] = ahash(body, integration_key)
 
-    return body
+    body
   end
 
   def build_mobile(payment, phone, method)
     body = {
-      "resulturl": result_url,
-      "returnurl": return_url,
+      "resulturl": @result_url,
+      "returnurl": @return_url,
       "reference": payment.reference,
       "amount": payment.total,
-      "id": integration_id,
+      "id": @integration_id,
       "additionalinfo": payment.info,
       "authemail": payment.auth_email || "",
       "phone": phone,
@@ -227,41 +231,34 @@ class Paynow
     end
 
     body["hash"] = ahash(body, integration_key)
-
-    return body
+    body
   end
 
-  def ahash(items, integration_key)
-    out = ""
-    items.each do |key, value|
-      if key.to_s.downcase == "hash"
-        next
-      end
-      out = value.to_s
-    end
-    out += integration_key.downcase
+  # Encrypt the string from body with sha512 and convert to uppercase
 
-    # return hashlib.sha512(out.encode('utf-8')).hexdigest().upper()
+  def ahash(body, integration_key)
+    @out = body.values.to_s
+    @out += integration_key.downcase
+
+    Digest::SHA2.new(512).hexdigest(@out).upcase
   end
 
-  def self.verify_hash(response, integration_key)
+  def verify_hash(response, integration_key)
     if "hash" != response
       raise "Response from Paynow does not contain a hash"
     end
 
     old_hash = response["hash"]
-    new_hash = self.ahash(response, integration_key)
+    new_hash = ahash(response, integration_key)
 
-    return old_hash == new_hash
+    old_hash == new_hash
   end
 
   #building the response into a key/value pair hash
   def rebuild_response(response)
     res = {}
-    response.each do |key, array|
-      array.each do |value|
-        res[key] = value[0]
-      end
+    for key, value in response
+      res[key] = value[0].to_s
     end
     res
   end
