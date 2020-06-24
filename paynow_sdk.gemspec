@@ -10,6 +10,7 @@ Gem::Specification.new do |spec|
   spec.description = %q{The gem includes modules and methods to make it easy for integrating paynow api to ruby apps.}
   spec.homepage = "https://github.com/gitnyasha/paynow-ruby-sdk"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.3.0")
+  spec.license = "MIT"
 
   spec.metadata["allowed_push_host"] = "https://rubygems.org/"
 
