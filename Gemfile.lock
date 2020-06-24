@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    paynow_sdk (0.1.4)
+    paynow_sdk (0.1.5)
 
 GEM
   remote: https://rubygems.org/
