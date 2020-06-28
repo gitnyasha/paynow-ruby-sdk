@@ -300,8 +300,8 @@ class Paynow
 
   def __build(payment)
     body = { "resulturl" => @result_url, "returnurl" => @return_url, "reference" => payment.reference, "amount" => payment.total(), "id" => @integration_id, "additionalinfo" => payment.info(), "authemail" => payment.auth_email || "", "status" => "Message" }
-    body.each do |key, value|
-      body[key] = %q[value].to_s
+    for (key, value) in body
+      body[key] = CGI::escape(value.to_s)
     end
     body["hash"] = __hash(body, @integration_key)
     body
@@ -309,7 +309,7 @@ class Paynow
 
   def __build_mobile(payment, phone, method)
     body = { "resulturl" => @result_url, "returnurl" => @return_url, "reference" => payment.reference, "amount" => payment.total(), "id" => @integration_id, "additionalinfo" => payment.info(), "authemail" => payment.auth_email, "phone" => phone, "method" => method, "status" => "Message" }
-    for (key, value) in body.to_a
+    for (key, value) in body
       if key == "authemail"
         next
       end
@@ -321,7 +321,7 @@ class Paynow
 
   def __hash(items, integration_key)
     out = ""
-    for (key, value) in items.to_a
+    for (key, value) in items
       if key.to_s.downcase == "hash"
         next
       end

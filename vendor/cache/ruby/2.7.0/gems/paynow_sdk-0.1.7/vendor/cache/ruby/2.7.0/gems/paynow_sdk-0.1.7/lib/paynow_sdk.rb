@@ -262,7 +262,7 @@ class Paynow
       raise TypeError, "Transaction total cannot be less than 1"
     end
     data = __build(payment)
-    response = HTTParty.post(@url_initiate_transaction, data: data)
+    response = HTTParty.post(@url_initiate_transaction, data)
     response_object = __rebuild_response(CGI.parse(response))
     if response_object["status"].to_s.downcase == "error"
       return InitResponse.new(response_object)
@@ -281,7 +281,7 @@ class Paynow
       raise TypeError, "Auth email is required for mobile transactions. You can pass the auth email as the second parameter in the create_payment method call"
     end
     data = __build_mobile(payment, phone, method)
-    response = HTTParty.post(@url_initiate_mobile_transaction, data: data)
+    response = HTTParty.post(@url_initiate_mobile_transaction, data)
     response_object = __rebuild_response(CGI.parse(response))
     if response_object["status"].to_s.downcase == "error"
       return InitResponse.new(response_object)
@@ -300,8 +300,8 @@ class Paynow
 
   def __build(payment)
     body = { "resulturl" => @result_url, "returnurl" => @return_url, "reference" => payment.reference, "amount" => payment.total(), "id" => @integration_id, "additionalinfo" => payment.info(), "authemail" => payment.auth_email || "", "status" => "Message" }
-    for (key, value) in body.to_a
-      body[key] = CGI::escape(value.to_s)
+    body.each do |key, value|
+      body[key] = %q[value].to_s
     end
     body["hash"] = __hash(body, @integration_key)
     body
