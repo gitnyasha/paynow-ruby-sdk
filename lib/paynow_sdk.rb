@@ -20,14 +20,14 @@ class StatusResponse
   @@hash = String
 
   def __status_update(data)
-    "Not implemented"
+    return "Not implemented"
   end
 
   def initialize(data, update)
     if is_bool(update)
       __status_update(data)
     else
-      @status = data["status"].downcase()
+      @status = data["status"].downcase
       @paid = @status == "paid"
       if data.include?("amount")
         @amount = data["amount"].to_f
@@ -92,7 +92,7 @@ class InitResponse
 
   def initialize(data)
     @status = data["status"]
-    @success = data["status"].downcase() != "error"
+    @success = data["status"].downcase != "error"
     @has_redirect = data.include?("browserurl")
     @hash = data.include?("hash")
     if is_bool(!@success)
@@ -205,8 +205,8 @@ class Payment
 end
 
 class Paynow
-  @@URL_INITIATE_TRANSACTION = "https://www.paynow.co.zw/interface/initiatetransaction"
-  @@URL_INITIATE_MOBILE_TRANSACTION = "https://www.paynow.co.zw/interface/remotetransaction"
+  @@url_initiate_transaction = URI("https://www.paynow.co.zw/interface/initiatetransaction")
+  @@url_initiate_mobile_transaction = "https://www.paynow.co.zw/interface/remotetransaction"
   @@integration_id = String
   @@integration_key = String
   @@return_url = ""
@@ -262,9 +262,9 @@ class Paynow
       raise TypeError, "Transaction total cannot be less than 1"
     end
     data = __build(payment)
-    response = requests.HTTParty.post(@URL_INITIATE_TRANSACTION, data)
-    response_object = __rebuild_response(CGI.parse(response.txt))
-    if response_object["status"].to_s.downcase() == "error"
+    response = HTTParty.post(@url_initiate_transaction, data)
+    response_object = __rebuild_response(CGI.parse(response))
+    if response_object["status"].to_s.downcase == "error"
       return InitResponse.new(response_object)
     end
     if is_bool(!__verify_hash(response_object, @integration_key))
@@ -281,9 +281,9 @@ class Paynow
       raise TypeError, "Auth email is required for mobile transactions. You can pass the auth email as the second parameter in the create_payment method call"
     end
     data = __build_mobile(payment, phone, method)
-    response = requests.HTTParty.post(@URL_INITIATE_TRANSACTION, data)
-    response_object = __rebuild_response(CGI.parse(response.txt))
-    if response_object["status"].to_s.downcase() == "error"
+    response = HTTParty.post(@url_initiate_mobile_transaction, data)
+    response_object = __rebuild_response(CGI.parse(response))
+    if response_object["status"].to_s.downcase == "error"
       return InitResponse.new(response_object)
     end
     if is_bool(!__verify_hash(response_object, @integration_key))
@@ -293,42 +293,42 @@ class Paynow
   end
 
   def check_transaction_status(poll_url)
-    response = requests.HTTParty.post(poll_url, data: {})
-    response_object = __rebuild_response(CGI.parse(response.txt))
+    response = HTTParty.post(poll_url, data: {})
+    response_object = __rebuild_response(CGI.parse(response))
     return StatusResponse.new(response_object, false)
   end
 
   def __build(payment)
     body = { "resulturl" => @result_url, "returnurl" => @return_url, "reference" => payment.reference, "amount" => payment.total(), "id" => @integration_id, "additionalinfo" => payment.info(), "authemail" => payment.auth_email || "", "status" => "Message" }
-    for (key, value) in body.to_a()
+    for (key, value) in body.to_a
       body[key] = CGI::escape(value.to_s)
     end
     body["hash"] = __hash(body, @integration_key)
-    return body
+    body
   end
 
   def __build_mobile(payment, phone, method)
     body = { "resulturl" => @result_url, "returnurl" => @return_url, "reference" => payment.reference, "amount" => payment.total(), "id" => @integration_id, "additionalinfo" => payment.info(), "authemail" => payment.auth_email, "phone" => phone, "method" => method, "status" => "Message" }
-    for (key, value) in body.to_a()
+    for (key, value) in body.to_a
       if key == "authemail"
         next
       end
       body[key] = CGI::escape(value.to_s)
     end
     body["hash"] = __hash(body, @integration_key)
-    return body
+    body
   end
 
   def __hash(items, integration_key)
     out = ""
-    for (key, value) in items.to_a()
-      if key.to_s.downcase() == "hash"
+    for (key, value) in items.to_a
+      if key.to_s.downcase == "hash"
         next
       end
       out += value.to_s
     end
-    out += integration_key.downcase()
-    return Digest::SHA2.new(512).hexdigest(@out).upcase
+    out += integration_key.downcase
+    Digest::SHA2.new(512).hexdigest(out).upcase
   end
 
   def __verify_hash(response, integration_key)
@@ -342,23 +342,23 @@ class Paynow
 
   def __rebuild_response(response)
     res = {}
-    for (key, value) in response.to_a()
+    for (key, value) in response.to_a
       res[key] = value[0].to_s
     end
     return res
   end
 
-  def self.URL_INITIATE_TRANSACTION; @@URL_INITIATE_TRANSACTION; end
-  def self.URL_INITIATE_TRANSACTION=(val); @@URL_INITIATE_TRANSACTION = val; end
+  def self.url_initiate_transaction; @@url_initiate_transaction; end
+  def self.url_initiate_transaction=(val); @@url_initiate_transaction = val; end
 
-  def URL_INITIATE_TRANSACTION; @URL_INITIATE_TRANSACTION = @@URL_INITIATE_TRANSACTION if @URL_INITIATE_TRANSACTION.nil?; @URL_INITIATE_TRANSACTION; end
-  def URL_INITIATE_TRANSACTION=(val); @URL_INITIATE_TRANSACTION = val; end
+  def url_initiate_transaction; @url_initiate_transaction = @@url_initiate_transaction if @url_initiate_transaction.nil?; @url_initiate_transaction; end
+  def url_initiate_transaction=(val); @url_initiate_transaction = val; end
 
-  def self.URL_INITIATE_MOBILE_TRANSACTION; @@URL_INITIATE_MOBILE_TRANSACTION; end
-  def self.URL_INITIATE_MOBILE_TRANSACTION=(val); @@URL_INITIATE_MOBILE_TRANSACTION = val; end
+  def self.url_initiate_mobile_transaction; @@url_initiate_mobile_transaction; end
+  def self.url_initiate_mobile_transaction=(val); @@url_initiate_mobile_transaction = val; end
 
-  def URL_INITIATE_MOBILE_TRANSACTION; @URL_INITIATE_MOBILE_TRANSACTION = @@URL_INITIATE_MOBILE_TRANSACTION if @URL_INITIATE_MOBILE_TRANSACTION.nil?; @URL_INITIATE_MOBILE_TRANSACTION; end
-  def URL_INITIATE_MOBILE_TRANSACTION=(val); @URL_INITIATE_MOBILE_TRANSACTION = val; end
+  def url_initiate_mobile_transaction; @url_initiate_mobile_transaction = @@url_initiate_mobile_transaction if @url_initiate_mobile_transaction.nil?; @url_initiate_mobile_transaction; end
+  def url_initiate_mobile_transaction=(val); @url_initiate_mobile_transaction = val; end
 
   def self.integration_id; @@integration_id; end
   def self.integration_id=(val); @@integration_id = val; end
