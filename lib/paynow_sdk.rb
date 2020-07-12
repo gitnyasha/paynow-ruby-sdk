@@ -1,7 +1,9 @@
 require "paynow_sdk/version"
-require "httparty"
 require "cgi"
 require "digest"
+require "httparty"
+require "uri"
+require "rest-client"
 
 #throws error when hash from Paynow does not match locally generated hash
 
@@ -13,18 +15,18 @@ end
 
 class StatusResponse
   @@paid = true
-  @@status = String
+  @@status = ""
   @@amount = Float
-  @@reference = String
-  @@paynow_reference = String
-  @@hash = String
+  @@reference = ""
+  @@paynow_reference = ""
+  @@hash = ""
 
   def __status_update(data)
     return "Not implemented"
   end
 
   def initialize(data, update)
-    if is_bool(update)
+    if update
       __status_update(data)
     else
       @status = data["status"].downcase
@@ -83,26 +85,25 @@ end
 
 class InitResponse
   @@success = true
-  @@instructions = String
+  @@instructions = ""
   @@has_redirect = true
-  @@hash = String
-  @@redirect_url = String
-  @@error = String
-  @@poll_url = String
+  @@hash = ""
+  @@redirect_url = ""
+  @@error = ""
+  @@poll_url = ""
 
   def initialize(data)
     @status = data["status"]
     @success = data["status"].downcase != "error"
     @has_redirect = data.include?("browserurl")
     @hash = data.include?("hash")
-    if is_bool(!@success)
-      return
+    if !@success
+      @poll_url = data["pollurl"]
     end
-    @poll_url = data["pollurl"]
-    if is_bool(!@success)
+    if !@success
       @error = data["error"]
     end
-    if is_bool(@has_redirect)
+    if @has_redirect
       @redirect_url = data["browserurl"]
     end
     if data.include?("instructions")
@@ -154,9 +155,9 @@ class InitResponse
 end
 
 class Payment
-  @@reference = String
+  @@reference = ""
   @@items = []
-  @@auth_email = String
+  @@auth_email = ""
 
   def initialize(reference, auth_email)
     @reference = reference
@@ -207,8 +208,8 @@ end
 class Paynow
   @@url_initiate_transaction = "https://www.paynow.co.zw/interface/initiatetransaction/"
   @@url_initiate_mobile_transaction = "https://www.paynow.co.zw/interface/remotetransaction/"
-  @@integration_id = String
-  @@integration_key = String
+  @@integration_id = ""
+  @@integration_key = ""
   @@return_url = ""
   @@result_url = ""
 
@@ -232,120 +233,110 @@ class Paynow
   end
 
   def send(payment)
-    __init(payment)
+    init(payment)
   end
 
   def send_mobile(payment, phone, method)
-    __init_mobile(payment, phone, method)
+    init_mobile(payment, phone, method)
   end
 
   def process_status_update(data)
     StatusResponse.new(data, true)
   end
 
-  def qs_to_hash(querystring)
-    keyvals = querystring.split("&").inject({}) do |result, q|
-      k, v = q.split("=")
-      if !v.nil?
-        result.merge({ k => v })
-      elsif !result.key?(k)
-        result.merge({ k => true })
-      else
-        result
-      end
-    end
-    keyvals
-  end
+  # def qs_to_hash(querystring)
+  #   keyvals = querystring.split("&").inject({}) do |result, q|
+  #     k, v = q.split("=")
+  #     if !v.nil?
+  #       result.merge({ k => v })
+  #     elsif !result.key?(k)
+  #       result.merge({ k => true })
+  #     else
+  #       result
+  #     end
+  #   end
+  #   keyvals
+  # end
 
-  def __init(payment)
+  def init(payment)
     if payment.total <= 0
       raise TypeError, "Transaction total cannot be less than 1"
     end
-    data = __build(payment)
-    response = HTTParty.post(@url_initiate_transaction, data)
-    response_object = __rebuild_response(CGI.parse(response))
+    data = build(payment)
+
+    response = RestClient.post("https://www.paynow.co.zw/interface/initiatetransaction/", data)
+    response_object = rebuild_response(response)
+
     if response_object["status"].to_s.downcase == "error"
       InitResponse.new(response_object)
     end
-    if is_bool(!__verify_hash(response_object, @integration_key))
-      raise HashMismatchException, "Hashes do not match"
-    end
+    # if !verify_hash(response_object, @integration_key)
+    #   raise HashMismatchException, "Hashes do not match"
+    # end
     InitResponse.new(response_object)
   end
 
-  def __init_mobile(payment, phone, method)
-    if payment.total <= 0
-      raise TypeError, "Transaction total cannot be less than 1"
-    end
-    if is_bool(!payment.auth_email || payment.auth_email.size <= 0)
-      raise TypeError, "Auth email is required for mobile transactions. You can pass the auth email as the second parameter in the create_payment method call"
-    end
-    data = __build_mobile(payment, phone, method)
-    response = HTTParty.post(@url_initiate_mobile_transaction, data)
-    response_object = __rebuild_response(CGI.parse(response))
-    if response_object["status"].to_s.downcase == "error"
-      InitResponse.new(response_object)
-    end
-    if is_bool(!__verify_hash(response_object, @integration_key))
-      raise HashMismatchException, "Hashes do not match"
-    end
-    InitResponse.new(response_object)
-  end
+  # def init_mobile(payment, phone, method)
+  #   if payment.total <= 0
+  #     raise TypeError, "Transaction total cannot be less than 1"
+  #   end
+  #   if is_bool(!payment.auth_email || payment.auth_email.size <= 0)
+  #     raise TypeError, "Auth email is required for mobile transactions. You can pass the auth email as the second parameter in the create_payment method call"
+  #   end
+  #   data = build_mobile(payment, phone, method)
+  #   response = HTTParty.post(@url_initiate_mobile_transaction, data)
+  #   response_object = rebuild_response(response)
+  #   if response_object["status"].to_s.downcase == "error"
+  #     InitResponse.new(response_object)
+  #   end
+  #   if is_bool(!verify_hash(response_object, @integration_key))
+  #     raise HashMismatchException, "Hashes do not match"
+  #   end
+  #   InitResponse.new(response_object)
+  # end
 
   def check_transaction_status(poll_url)
     response = HTTParty.post(poll_url, data: {})
-    response_object = __rebuild_response(CGI.parse(response))
+    response_object = rebuild_response(response)
     StatusResponse.new(response_object, false)
   end
 
-  def __build(payment)
+  def build(payment)
     body = { "resulturl": @result_url, "returnurl": @return_url, "reference": payment.reference, "amount": payment.total, "id": @integration_id, "additionalinfo": payment.info, "authemail": payment.auth_email || "", "status": "Message" }
-    for (key, value) in body
-      body[key] = CGI::escape(value.to_s)
-    end
-    body["hash"] = __hash(body, @integration_key)
+    joined = body.values.join.to_s
+    add_key = joined += @integration_key
+    body["hash"] = createdhash(add_key)
+    body = URI.encode_www_form(body)
     body
   end
 
-  def __build_mobile(payment, phone, method)
+  def build_mobile(payment, phone, method)
     body = { "resulturl": @result_url, "returnurl": @return_url, "reference": payment.reference, "amount": payment.total, "id": @integration_id, "additionalinfo": payment.info, "authemail": payment.auth_email, "phone": phone, "method": method, "status": "Message" }
-    for (key, value) in body
-      if key == "authemail"
-        next
-      end
-      body[key] = CGI::escape(value.to_s)
-    end
-    body["hash"] = __hash(body, @integration_key)
+    joined = body.values.join.to_s
+    add_key = joined += @integration_key
+    body["hash"] = createdhash(add_key)
+    body = URI.encode_www_form(body)
     body
   end
 
-  def __hash(items, integration_key)
-    out = ""
-    for (key, value) in items
-      if key.to_s.downcase == "hash"
-        next
-      end
-      out += value.to_s
-    end
-    out += integration_key.downcase
+  def createdhash(out)
     Digest::SHA2.new(512).hexdigest(out).upcase
   end
 
-  def __verify_hash(response, integration_key)
-    if !response.include?("hash")
-      raise TypeError, "Response from Paynow does not contain a hash"
-    end
-    old_hash = response["hash"]
-    new_hash = __hash(response, integration_key)
-    old_hash == new_hash
-  end
+  #verify the hash send to paynow is equal to the hash from paynow
+  # def verify_hash(response)
+  #   # if !response.include?("hash")
+  #   #   raise TypeError, "Response from Paynow does not contain a hash"
+  #   # end
+  #   old_hash = response["hash"]
+  #   new_hash = createdhash(response)
+  #   old_hash == new_hash
+  # end
 
-  def __rebuild_response(response)
-    res = {}
-    for (key, value) in response.to_a
-      res[key] = value[0].to_s
-    end
-    res
+  #  rebuild a response from paynow into hash like the we send
+
+  def rebuild_response(response)
+    URI.decode_www_form(response).to_h
   end
 
   def self.url_initiate_transaction; @@url_initiate_transaction; end
