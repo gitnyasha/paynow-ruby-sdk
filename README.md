@@ -56,7 +56,7 @@ If request was successful, you should consider saving the poll url sent from Pay
 
 ```ruby
 if response.success
-    # Get the link to redirect the user to, then use it as you see fit
+    # The link to redirect the user to paynow to make the payment
 	link = response.redirect_url
 	# Get the poll url (used to check the status of a transaction). You might want to save this in your DB
     pollUrl = response.poll_url
@@ -135,6 +135,9 @@ response = paynow.send(payment)
 
 
 if response.success
+ # The link to redirect the user to paynow to make the payment
+    link = response.redirect_url
+    
     poll_url = response.poll_url
 
     print "Poll Url: " + poll_url
