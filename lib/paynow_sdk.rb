@@ -1,9 +1,7 @@
 require "paynow_sdk/version"
 require "cgi"
 require "digest"
-require "httparty"
 require "uri"
-require "rest-client"
 require "net/http"
 
 #throws error when hash from Paynow does not match locally generated hash
@@ -107,7 +105,7 @@ class InitResponse
       @error = data["error"]
     end
     if @has_redirect
-      puts @redirect_url = data["browserurl"]
+      @redirect_url = data["browserurl"]
     end
     if data.include?("instructions")
       @instruction = data["instructions"]
@@ -245,7 +243,7 @@ class Paynow
       raise TypeError, "Transaction total cannot be less than 1"
     end
 
-    puts data = build(payment)
+    data = build(payment)
 
     url = URI("https://www.paynow.co.zw/interface/initiatetransaction/")
 
@@ -260,7 +258,7 @@ class Paynow
     response = http.request(request)
     response.read_body
 
-    puts response_object = rebuild_response(response.read_body)
+    response_object = rebuild_response(response.read_body)
 
     if response_object["status"].to_s.downcase == "error"
       InitResponse.new(response_object)
@@ -271,30 +269,59 @@ class Paynow
     InitResponse.new(response_object)
   end
 
-  # def init_mobile(payment, phone, method)
-  #   if payment.total <= 0
-  #     raise TypeError, "Transaction total cannot be less than 1"
-  #   end
-  #   if is_bool(!payment.auth_email || payment.auth_email.size <= 0)
-  #     raise TypeError, "Auth email is required for mobile transactions. You can pass the auth email as the second parameter in the create_payment method call"
-  #   end
-  #   data = build_mobile(payment, phone, method)
-  #   response = HTTParty.post(@url_initiate_mobile_transaction, data)
-  #   response_object = rebuild_response(response)
-  #   if response_object["status"].to_s.downcase == "error"
-  #     InitResponse.new(response_object)
-  #   end
-  #   if is_bool(!verify_hash(response_object, @integration_key))
-  #     raise HashMismatchException, "Hashes do not match"
-  #   end
-  #   InitResponse.new(response_object)
-  # end
+  def init_mobile(payment, phone, method)
+    if payment.total <= 0
+      raise TypeError, "Transaction total cannot be less than 1"
+    end
+    if !payment.auth_email || payment.auth_email.size <= 0
+      raise TypeError, "Auth email is required for mobile transactions. You can pass the auth email as the second parameter in the create_payment method call"
+    end
+
+    data = build_mobile(payment, phone, method)
+
+    url = URI("https://www.paynow.co.zw/interface/remotetransaction")
+
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    request = Net::HTTP::Post.new(url)
+    request["content-type"] = "application/x-www-form-urlencoded"
+    request.body = data
+
+    response = http.request(request)
+    response.read_body
+
+    response_object = rebuild_response(response.read_body)
+
+    if response_object["status"].to_s.downcase == "error"
+      InitResponse.new(response_object)
+    end
+    if !verify_hash(response_object)
+      raise HashMismatchException, "Hashes do not match"
+    end
+    InitResponse.new(response_object)
+  end
 
   def check_transaction_status(poll_url)
-    response = HTTParty.post(poll_url, data: {})
-    response_object = rebuild_response(response)
+    url = URI(poll_url)
+
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    request = Net::HTTP::Post.new(url)
+    request["content-type"] = "application/x-www-form-urlencoded"
+    request.body = data
+
+    response = http.request(request)
+    response.read_body
+
+    response_object = rebuild_response(response.read_body)
     StatusResponse.new(response_object, false)
   end
+
+  #web payments
 
   def build(payment)
     body = {
@@ -315,12 +342,26 @@ class Paynow
     body
   end
 
+  #mobile payments
+
   def build_mobile(payment, phone, method)
-    body = { "resulturl": @result_url, "returnurl": @return_url, "reference": payment.reference, "amount": payment.total, "id": @integration_id, "additionalinfo": payment.info, "authemail": payment.auth_email, "phone": phone, "method": method, "status": "Message" }
-    joined = body.values.join.to_s
+    body = {
+      "resulturl": @result_url,
+      "returnurl": @return_url,
+      "reference": payment.reference,
+      "amount": payment.total,
+      "id": @integration_id,
+      "additionalinfo": payment.info,
+      "authemail": payment.auth_email,
+      "phone": phone,
+      "method": method,
+      "status": "Message",
+    }
+
+    joined = body.values.join
     add_key = joined += @integration_key
     body["hash"] = createdhash(add_key)
-    # body = URI.encode_www_form(body)
+    body = URI.encode_www_form(body)
     body
   end
 
