@@ -24,8 +24,8 @@ Create an instance of the Paynow class optionally setting the result and return 
 paynow = Paynow(
 	'INTEGRATION_ID',
 	'INTEGRATION_KEY',
-	'http://google.com',
-	'http://google.com'
+	'http://returnurl.com',
+	'http://resulturl.com'
 	)
 ```
 
