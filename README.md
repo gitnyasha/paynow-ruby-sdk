@@ -55,13 +55,12 @@ The response from Paynow will b have some useful information like whether the re
 If request was successful, you should consider saving the poll url sent from Paynow in the database
 
 ```ruby
-if response.success:
-
+if response.success
     # Get the link to redirect the user to, then use it as you see fit
 	link = response.redirect_url
-
 	# Get the poll url (used to check the status of a transaction). You might want to save this in your DB
-	pollUrl = response.poll_url
+    pollUrl = response.poll_url
+end
 ```
 
 ---
@@ -81,11 +80,12 @@ response = paynow.send_mobile(payment, '0777777777', 'ecocash')
 The response object is almost identical to the one you get if you send a normal request. With a few differences, firstly, you don't get a url to redirect to. Instead you instructions (which ideally should be shown to the user instructing them how to make payment on their mobile phone)
 
 ```ruby
-if(response.success) :
+if response.success
 	# Get the poll url (used to check the status of a transaction). You might want to save this in your DB
     poll_url = response.poll_url
 
     instructions = response.instructions
+end
 ```
 
 # Checking transaction status
@@ -97,10 +97,11 @@ The SDK exposes a handy method that you can use to check the status of a transac
 # Now you see why you need to save that url ;-)
 status = paynow.check_transaction_status(poll_url)
 
-if status.paid :
+if status.paid
 	# Yay! Transaction was paid for. Update transaction?
-else :
-	# Handle that
+else
+    # Handle that
+end
 ```
 
 # Full Usage Example
@@ -110,14 +111,15 @@ gem 'paynow_sdk'
 ```
 
 And then execute:
-
+```ruby
     $ bundle install
-
+```
 Or install it yourself as:
-
+```ruby
     $ gem install paynow_sdk
+```
 
-
+```ruby
 paynow = Paynow(
 	'INTEGRATION_ID',
 	'INTEGRATION_KEY',
@@ -129,23 +131,22 @@ payment = paynow.create_payment('Order', 'test@example.com')
 
 payment.add('Payment for stuff', 1)
 
-response = paynow.send_mobile(payment, '0773662924', 'ecocash')
+response = paynow.send(payment)
 
 
-if(response.success):
+if response.success
     poll_url = response.poll_url
 
-    print("Poll Url: ", poll_url)
+    print "Poll Url: " + poll_url
 
     status = paynow.check_transaction_status(poll_url)
 
-    time.sleep(30)
-
-    print("Payment Status: ", status.status)
+    print "Payment Status: " + status.status
+end
 ```
 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/paynow_sdk.
+Bug reports and pull requests are welcome on GitHub at https://github.com/gitnyasha/paynow_sdk.
 
