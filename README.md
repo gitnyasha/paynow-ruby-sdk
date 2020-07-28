@@ -21,7 +21,7 @@ Or install it yourself as:
 Create an instance of the Paynow class optionally setting the result and return url(s)
 
 ```ruby
-paynow = Paynow(
+paynow = Paynow.new(
 	'INTEGRATION_ID',
 	'INTEGRATION_KEY',
 	'http://returnurl.com',
@@ -120,7 +120,7 @@ Or install it yourself as:
 ```
 
 ```ruby
-paynow = Paynow(
+paynow = Paynow.new(
 	'INTEGRATION_ID',
 	'INTEGRATION_KEY',
 	'http://returnurl.com',
