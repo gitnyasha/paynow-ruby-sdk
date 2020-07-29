@@ -111,10 +111,13 @@ gem 'paynow_sdk'
 ```
 
 And then execute:
+
 ```ruby
     $ bundle install
 ```
+
 Or install it yourself as:
+
 ```ruby
     $ gem install paynow_sdk
 ```
@@ -137,7 +140,7 @@ response = paynow.send(payment)
 if response.success
  # The link to redirect the user to paynow to make the payment
     link = response.redirect_url
-    
+
     poll_url = response.poll_url
 
     print "Poll Url: " + poll_url
@@ -148,8 +151,6 @@ if response.success
 end
 ```
 
-
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/gitnyasha/paynow_sdk.
-
+Bug reports and pull requests are welcome on GitHub at https://github.com/gitnyasha/paynow-ruby-sdk.
