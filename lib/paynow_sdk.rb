@@ -33,7 +33,7 @@ class StatusResponse
       @status = data["status"].downcase
       @paid = @status == "paid"
       if data.include?("amount")
-        @amount = data["amount"].round(2)
+        @amount = data["amount"]
       end
       if data.include?("reference")
         @reference = data["reference"]
@@ -176,7 +176,7 @@ class Payment
     for item in @items
       total += item[1]
     end
-    total
+    total.round(2)
   end
 
   def info
