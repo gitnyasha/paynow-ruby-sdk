@@ -176,7 +176,7 @@ class Payment
     for item in @items
       total += item[1]
     end
-    total.round(2)
+    total
   end
 
   def info
