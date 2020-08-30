@@ -312,7 +312,7 @@ class Paynow
 
     request = Net::HTTP::Post.new(url)
     request["content-type"] = "application/x-www-form-urlencoded"
-    request.body = data
+    request.body = {}
 
     response = http.request(request)
     response.read_body
