@@ -130,9 +130,9 @@ paynow = Paynow.new(
 	'http://resulturl.com'
 	)
 
-payment = paynow.create_payment('Order', 'test@example.com')
+payment = paynow.create_payment('Order Number', 'test@example.com')
 
-payment.add('Payment for stuff', 1)
+payment.add('Payment for stuff', 99.99)
 
 response = paynow.send(payment)
 
@@ -143,11 +143,11 @@ if response.success
 
     poll_url = response.poll_url
 
-    print "Poll Url: " + poll_url
-
     status = paynow.check_transaction_status(poll_url)
-
-    print "Payment Status: " + status.status
+    if status.paid
+        #create a record in the database e.g orders table
+        print "Payment Status: " + status.status
+    end
 end
 ```
 

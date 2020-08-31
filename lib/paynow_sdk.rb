@@ -30,8 +30,8 @@ class StatusResponse
     if update
       status_update(data)
     else
-      @status = data["status"].downcase
-      @paid = @status == "Paid"
+      @status = data["status"]
+      @paid = @status = "Paid"
       if data.include?("amount")
         @amount = data["amount"]
       end
