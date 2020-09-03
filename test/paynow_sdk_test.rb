@@ -6,10 +6,12 @@ class PaynowSdkTest < Minitest::Test
   end
 
   def test_it_does_something_useful
-    assert true
+    paynow = Paynow.new("int_id", "int_key", "link", "link")
+    assert paynow.createdhash("something")
   end
 
-  def test_it_does_something_useful
-    assert "data".status_update
+  def test_it_instantiate
+    payment = Payment.new("1", "me@mail.com")
+    assert payment.add("something", 1.00)
   end
 end

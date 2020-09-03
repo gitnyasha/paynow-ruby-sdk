@@ -30,7 +30,9 @@ class StatusResponse
     if update
       status_update(data)
     else
-      @status = data["status"]
+      if data.include?("status")
+        @status = data["status"]
+      end
       if data.include?("amount")
         @amount = data["amount"]
       end
