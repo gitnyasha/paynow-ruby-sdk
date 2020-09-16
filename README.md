@@ -98,7 +98,7 @@ The SDK exposes a handy method that you can use to check the status of a transac
 
 status = PaynowStatus.check_transcation_status(poll_url)
 
-if status.paid
+if status["status"] == "Paid"
 	render page
 	print "Payment successfull"
 else
