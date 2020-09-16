@@ -5,6 +5,33 @@ require "uri"
 require "net/http"
 
 #throws error when hash from Paynow does not match locally generated hash
+module PaynowStatus
+  def paid
+    status_paid = check_transaction_status(poll_url)
+    status_paid["status"] == "Paid"
+  end
+
+  def check_transaction_status(poll_url)
+    url = URI(poll_url)
+
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    request = Net::HTTP::Post.new(url)
+    request["content-type"] = "application/x-www-form-urlencoded"
+
+    response = http.request(request)
+    response.read_body
+
+    response_object = rebuild_response(response.read_body)
+    response_object
+  end
+
+  def rebuild_response(response)
+    URI.decode_www_form(response).to_h
+  end
+end
 
 class HashMismatchException < Exception
   def initialize(message)
@@ -15,7 +42,6 @@ end
 #Returns the status of the payment
 
 class StatusResponse
-  @@paid = true
   @@status = ""
   @@amount = 0.0
   @@reference = ""
@@ -47,12 +73,6 @@ class StatusResponse
       end
     end
   end
-
-  def self.paid; @@paid; end
-  def self.paid=(val); @@paid = val; end
-
-  def paid; @paid = @@paid if @paid.nil?; @paid; end
-  def paid=(val); @paid = val; end
 
   def self.status; @@status; end
   def self.status=(val); @@status = val; end
@@ -302,23 +322,6 @@ class Paynow
       raise HashMismatchException, "Hashes do not match"
     end
     InitResponse.new(response_object)
-  end
-
-  def check_transaction_status(poll_url)
-    url = URI(poll_url)
-
-    http = Net::HTTP.new(url.host, url.port)
-    http.use_ssl = true
-    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
-    request = Net::HTTP::Post.new(url)
-    request["content-type"] = "application/x-www-form-urlencoded"
-
-    response = http.request(request)
-    response.read_body
-
-    response_object = rebuild_response(response.read_body)
-    StatusResponse.new(response_object, false)
   end
 
   #web payments

@@ -94,13 +94,15 @@ The SDK exposes a handy method that you can use to check the status of a transac
 
 ```ruby
 # Check the status of the transaction with the specified poll url
-# Now you see why you need to save that url ;-)
-status = paynow.check_transaction_status(poll_url)
+#if you saved your poll url in the database you can use this function "PaynowStatus.check_transcation_status(poll_url)" to check the status of the payment
+
+status = PaynowStatus.check_transcation_status(poll_url)
 
 if status.paid
-	# Yay! Transaction was paid for. Update transaction?
+	render page
+	print "Payment successfull"
 else
-    # Handle that
+	print "Not Paid"
 end
 ```
 
