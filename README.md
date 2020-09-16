@@ -90,7 +90,7 @@ end
 
 # Checking transaction status
 
-The SDK exposes a handy method that you can use to check the status of a transaction. Once you have instantiated the Paynow class.
+The SDK exposes a handy method that you can use to check the status of a transaction.
 
 ```ruby
 # Check the status of the transaction with the specified poll url
