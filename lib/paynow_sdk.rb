@@ -6,12 +6,12 @@ require "net/http"
 
 #throws error when hash from Paynow does not match locally generated hash
 module PaynowStatus
-  def paid
+  def self.paid
     status_paid = check_transaction_status(poll_url)
     status_paid["status"] == "Paid"
   end
 
-  def check_transaction_status(poll_url)
+  def self.check_transaction_status(poll_url)
     url = URI(poll_url)
 
     http = Net::HTTP.new(url.host, url.port)
@@ -24,12 +24,8 @@ module PaynowStatus
     response = http.request(request)
     response.read_body
 
-    response_object = rebuild_response(response.read_body)
-    response_object
-  end
-
-  def rebuild_response(response)
-    URI.decode_www_form(response).to_h
+    response_object = rebuild(response.read_body)
+    URI.decode_www_form(response_object).to_h
   end
 end
 
