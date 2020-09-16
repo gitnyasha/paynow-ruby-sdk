@@ -142,12 +142,6 @@ if response.success
     link = response.redirect_url
 
     poll_url = response.poll_url
-
-    status = paynow.check_transaction_status(poll_url)
-    if status.paid
-        #create a record in the database e.g orders table
-        print "Payment Status: " + status.status
-    end
 end
 ```
 
