@@ -146,7 +146,7 @@ if response.success
     poll_url = response.poll_url
 end
 ```
-if it is a rails app you can put that code in the controller create method, whenever you click a button to pay it will run the whole code and replace the fields with your own for example the amount you can put the total amoumt of the items in the cart and email you can put the user email
+if it is a rails app you can put that code in the controller create method, whenever you click a button to pay it will run the whole code and replace the fields with your own for example the amount you can put the total amount of the items in the cart and email you can put the user email
 
 ## Contributing
 
