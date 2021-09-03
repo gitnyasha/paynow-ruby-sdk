@@ -7,7 +7,7 @@ class PaynowSdkTest < Minitest::Test
 
   def test_it_does_something_useful
     paynow = Paynow.new("int_id", "int_key", "link", "link")
-    assert paynow.createdhash("something")
+    assert paynow.createdhash("aad32432d2ref4f43f4")
   end
 
   def test_it_instantiate
