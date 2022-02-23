@@ -76,13 +76,13 @@ The `send_mobile` method unlike the `send` method takes in two additional argume
 #Paynow will send a SUCCESS status update message 5 seconds after the transaction is initiated
 #Success – 0771111111
 
-#Paynow will send a SUCCESS status update message 5 seconds after the transaction is initiated.
+#Paynow will send a SUCCESS status update message 30 seconds after the transaction is initiated. This simulates the user taking a longer than normal amount of time to authorize the transaction from their handset
 #Delayed Success – 0772222222
 
-#Paynow will send a SUCCESS status update message 30 seconds after the transaction is initiated. This simulates the user taking a longer than normal amount of time to authorize the transaction from their handset
+#Paynow will send a FAILED status update message 30 seconds after the transaction is initiated. This simulates the user cancelling the mobile money transaction.
 #User Cancelled – 0773333333
 
-#Paynow will send a FAILED status update message 30 seconds after the transaction is initiated. This simulates the user cancelling the mobile money transaction.
+#Paynow will immediately fail the transaction during initiation and return an “Insufficient balance” error message.
 #Insufficient Balance – 0774444444
 
 # Save the response from paynow in a variable
