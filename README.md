@@ -70,11 +70,23 @@ end
 If you want to send an express (mobile) checkout request instead, the only thing that differs is the last step. You make a call to the `send_mobile` in the `paynow` object
 instead of the `send` method.
 
-The `send_mobile` method unlike the `send` method takes in two additional arguments i.e The phone number to send the payment request to and the mobile money method to use for the request. **Note that currently only ecocash is supported**
+The `send_mobile` method unlike the `send` method takes in two additional arguments i.e The phone number to send the payment request to and the mobile money method to use for the request. **Note that currently only ecocash is supported and the authemail field supplied during test mode should match one of the login email addresses for the merchant account being tested. To use mobile money Express Checkout in test mode, there are four pre-configured mobile numbers that can be used to simulate various results:**
 
 ```ruby
+#Paynow will send a SUCCESS status update message 5 seconds after the transaction is initiated
+#Success – 0771111111
+
+#Paynow will send a SUCCESS status update message 5 seconds after the transaction is initiated.
+#Delayed Success – 0772222222
+
+#Paynow will send a SUCCESS status update message 30 seconds after the transaction is initiated. This simulates the user taking a longer than normal amount of time to authorize the transaction from their handset
+#User Cancelled – 0773333333
+
+#Paynow will send a FAILED status update message 30 seconds after the transaction is initiated. This simulates the user cancelling the mobile money transaction.
+#Insufficient Balance – 0774444444
+
 # Save the response from paynow in a variable
-response = paynow.send_mobile(payment, '0777777777', 'ecocash')
+response = paynow.send_mobile(payment, '0771111111', 'ecocash')
 ```
 
 The response object is almost identical to the one you get if you send a normal request. With a few differences, firstly, you don't get a url to redirect to. Instead you instructions (which ideally should be shown to the user instructing them how to make payment on their mobile phone)
@@ -146,6 +158,7 @@ if response.success
     poll_url = response.poll_url
 end
 ```
+
 if it is a rails app you can put that code in the controller create method, whenever you click a button to pay it will run the whole code and replace the fields with your own for example the amount you can put the total amount of the items in the cart and email you can put the user email
 
 ## Contributing
