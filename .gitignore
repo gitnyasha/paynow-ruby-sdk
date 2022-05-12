@@ -3,8 +3,7 @@
 /_yardoc/
 /coverage/
 /doc/
-/.vscode/
+.vscode
 /pkg/
 /spec/reports/
 /tmp/
-test.rb
