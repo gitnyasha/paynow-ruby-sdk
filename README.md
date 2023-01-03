@@ -1,4 +1,4 @@
-# PaynowSdk Ruby gem
+# Paynow Ruby gem
 
 ## Installation
 
