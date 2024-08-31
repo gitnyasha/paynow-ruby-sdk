@@ -4,7 +4,6 @@ require "digest"
 require "uri"
 require "net/http"
 
-#throws error when hash from Paynow does not match locally generated hash
 module PaynowStatus
   def self.paid
     status_paid = check_transaction_status(poll_url)
@@ -279,6 +278,7 @@ class Paynow
     if response_object["status"].to_s.downcase == "error"
       InitResponse.new(response_object)
     end
+
     if !verify_hash(response_object)
       raise HashMismatchException, "Hashes do not match"
     end
@@ -367,7 +367,6 @@ class Paynow
     Digest::SHA2.new(512).hexdigest(out).upcase
   end
 
-  #verify the hash send to paynow is equal to the hash from paynow
   def verify_hash(response)
     if !response.include?("hash")
       raise TypeError, "Response from Paynow does not contain a hash"
